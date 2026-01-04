@@ -10,11 +10,9 @@ interface TrackPointProps {
   position: THREE.Vector3;
   tilt: number;
   index: number;
-  isFirst?: boolean;
-  isLast?: boolean;
 }
 
-export function TrackPoint({ id, position, tilt, index, isFirst, isLast }: TrackPointProps) {
+export function TrackPoint({ id, position, tilt, index }: TrackPointProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const transformRef = useRef<any>(null);
   const [meshReady, setMeshReady] = useState(false);
@@ -84,8 +82,8 @@ export function TrackPoint({ id, position, tilt, index, isFirst, isLast }: Track
       >
         <sphereGeometry args={[TRACK_POINT_RADIUS, 16, 16]} />
         <meshStandardMaterial
-          color={isSelected ? "#ff6600" : isFirst ? "#00cc00" : isLast ? "#ff0000" : "#4488ff"}
-          emissive={isSelected ? "#ff3300" : isFirst ? "#00aa00" : isLast ? "#cc0000" : "#000000"}
+          color={isSelected ? "#ff6600" : "#4488ff"}
+          emissive={isSelected ? "#ff3300" : "#000000"}
           emissiveIntensity={0.3}
         />
       </mesh>

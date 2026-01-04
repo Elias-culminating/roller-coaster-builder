@@ -83,8 +83,6 @@ export function TrackBuilder() {
           position={point.position}
           tilt={point.tilt}
           index={index}
-          isFirst={index === 0}
-          isLast={index === trackPoints.length - 1}
         />
       ))}
       
