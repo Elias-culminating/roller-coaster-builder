@@ -4,14 +4,29 @@ import { useRollerCoaster } from "@/lib/stores/useRollerCoaster";
 
 export function Sky() {
   const { isNightMode } = useRollerCoaster();
+
+  // 🌞 moving sun time
   const sunRef = useRef<any>(null);
-  const timeRef = useRef(0);
+  const sunTime = useRef(0);
+
+  // ☁️ cloud movement
+  const cloudRefs = useRef<any[]>([]);
 
   useFrame((_, delta) => {
-    if (!isNightMode && sunRef.current) {
-      timeRef.current += delta * 0.05;
-      sunRef.current.position.x = Math.sin(timeRef.current) * 80;
-      sunRef.current.position.y = 45 + Math.cos(timeRef.current) * 10;
+    if (!isNightMode) {
+      sunTime.current += delta * 0.1;
+
+      if (sunRef.current) {
+        sunRef.current.position.x = Math.sin(sunTime.current) * 80;
+        sunRef.current.position.y = 40 + Math.cos(sunTime.current) * 20;
+      }
+
+      cloudRefs.current.forEach((cloud) => {
+        if (cloud) {
+          cloud.position.x += delta * 2;
+          if (cloud.position.x > 120) cloud.position.x = -120;
+        }
+      });
     }
   });
 
@@ -64,8 +79,6 @@ export function Sky() {
         <directionalLight position={[50, 50, 25]} intensity={0.5} color="#8899bb" />
 
         <pointLight position={[0, 30, 0]} intensity={2} color="#FFFFFF" distance={150} />
-        <pointLight position={[100, 40, -80]} intensity={1.5} color="#FF88FF" distance={100} />
-        <pointLight position={[-80, 35, 60]} intensity={1.5} color="#FFAA44" distance={100} />
 
         <mesh position={[-60, 45, -80]}>
           <sphereGeometry args={[6, 32, 32]} />
@@ -93,10 +106,6 @@ export function Sky() {
         ))}
 
         <group position={[120, 0, -100]}>
-          <mesh position={[0, 22, 0]}>
-            <cylinderGeometry args={[1, 1.5, 44, 8]} />
-            <meshStandardMaterial color="#555555" />
-          </mesh>
           <mesh position={[0, 28, 0]}>
             <torusGeometry args={[18, 0.6, 8, 32]} />
             <meshBasicMaterial color="#FF00FF" />
@@ -112,18 +121,42 @@ export function Sky() {
     );
   }
 
+  // 🌤️ DAY MODE (BIG CHANGE HERE)
   return (
     <>
       <color attach="background" args={["#BFDFFF"]} />
       <fog attach="fog" args={["#BFDFFF", 120, 450]} />
 
-      <mesh ref={sunRef} position={[80, 45, -80]}>
+      {/* Moving Sun */}
+      <mesh ref={sunRef}>
         <sphereGeometry args={[10, 32, 32]} />
         <meshBasicMaterial color="#FFF2AA" />
       </mesh>
 
+      {/* Clouds */}
+      {[0, 1, 2, 3, 4].map((i) => (
+        <group
+          key={i}
+          ref={(el) => (cloudRefs.current[i] = el)}
+          position={[-100 + i * 40, 50 + (i % 2) * 5, -50 + i * 20]}
+        >
+          <mesh position={[0, 0, 0]}>
+            <sphereGeometry args={[6, 16, 16]} />
+            <meshStandardMaterial color="#FFFFFF" />
+          </mesh>
+          <mesh position={[6, 0, 0]}>
+            <sphereGeometry args={[5, 16, 16]} />
+            <meshStandardMaterial color="#FFFFFF" />
+          </mesh>
+          <mesh position={[-6, 0, 0]}>
+            <sphereGeometry args={[5, 16, 16]} />
+            <meshStandardMaterial color="#FFFFFF" />
+          </mesh>
+        </group>
+      ))}
+
       <ambientLight intensity={0.5} />
-      <directionalLight position={[60, 60, 30]} intensity={1.1} castShadow />
+      <directionalLight position={[60, 60, 30]} intensity={1.1} />
       <hemisphereLight args={["#CFE9FF", "#3A7D44", 0.35]} />
     </>
   );
