@@ -1,3 +1,4 @@
+
 import { Canvas } from "@react-three/fiber";
 import { Suspense, useEffect, useRef } from "react";
 import "@fontsource/inter";
@@ -17,23 +18,21 @@ function MusicController() {
     setNightMusic, nightMusic,
     isMuted 
   } = useAudio();
-
   const hasStartedRef = useRef(false);
-
-  // Preload audio once
+  
   useEffect(() => {
     const base = import.meta.env.BASE_URL || '/';
+    
     const dayMusic = new Audio(`${base}sounds/roller-groover-ibiza-house-377494.mp3`);
     dayMusic.loop = true;
     dayMusic.volume = 0.5;
-
+    setDaylightMusic(dayMusic);
+    
     const nightMusicAudio = new Audio(`${base}sounds/no-copyright-music-hype-166457.mp3`);
     nightMusicAudio.loop = true;
     nightMusicAudio.volume = 0.5;
-
-    setDaylightMusic(dayMusic);
     setNightMusic(nightMusicAudio);
-
+    
     return () => {
       dayMusic.pause();
       dayMusic.src = "";
@@ -41,64 +40,74 @@ function MusicController() {
       nightMusicAudio.src = "";
     };
   }, [setDaylightMusic, setNightMusic]);
-
-  // Start playback on first user interaction
+  
   useEffect(() => {
-    const startMusic = () => {
-      if (!daylightMusic || !nightMusic) return;
+    const startMusicOnInteraction = () => {
       if (hasStartedRef.current) return;
-
       hasStartedRef.current = true;
-
+      
       if (!isMuted) {
-        if (isNightMode) nightMusic.play().catch(() => {});
-        else daylightMusic.play().catch(() => {});
+        if (isNightMode && nightMusic) {
+          nightMusic.play().catch(() => {});
+        } else if (!isNightMode && daylightMusic) {
+          daylightMusic.play().catch(() => {});
+        }
       }
+      
+      document.removeEventListener('click', startMusicOnInteraction);
+      document.removeEventListener('keydown', startMusicOnInteraction);
     };
-
-    document.addEventListener("click", startMusic);
-    document.addEventListener("keydown", startMusic);
-
+    
+    document.addEventListener('click', startMusicOnInteraction);
+    document.addEventListener('keydown', startMusicOnInteraction);
+    
     return () => {
-      document.removeEventListener("click", startMusic);
-      document.removeEventListener("keydown", startMusic);
+      document.removeEventListener('click', startMusicOnInteraction);
+      document.removeEventListener('keydown', startMusicOnInteraction);
     };
   }, [daylightMusic, nightMusic, isNightMode, isMuted]);
-
-  // Handle switching day/night and mute changes
+  
   useEffect(() => {
-    if (!daylightMusic || !nightMusic) return;
-    if (!hasStartedRef.current) return;
-
-    if (isMuted) {
-      daylightMusic.pause();
-      nightMusic.pause();
-      return;
-    }
-
+    if (!daylightMusic || !nightMusic || !hasStartedRef.current) return;
+    
     if (isNightMode) {
       daylightMusic.pause();
       nightMusic.currentTime = 0;
-      nightMusic.play().catch(() => {});
+      if (!isMuted) nightMusic.play().catch(() => {});
     } else {
       nightMusic.pause();
       daylightMusic.currentTime = 0;
-      daylightMusic.play().catch(() => {});
+      if (!isMuted) daylightMusic.play().catch(() => {});
     }
-  }, [isNightMode, isMuted, daylightMusic, nightMusic]);
-
+  }, [isNightMode, daylightMusic, nightMusic, isMuted]);
+  
+  useEffect(() => {
+    if (!hasStartedRef.current) return;
+    
+    if (isMuted) {
+      if (daylightMusic) daylightMusic.pause();
+      if (nightMusic) nightMusic.pause();
+    } else {
+      if (isNightMode && nightMusic) {
+        nightMusic.play().catch(() => {});
+      } else if (!isNightMode && daylightMusic) {
+        daylightMusic.play().catch(() => {});
+      }
+    }
+  }, [isMuted, daylightMusic, nightMusic, isNightMode]);
+  
   return null;
 }
 
 function Scene() {
   const { mode } = useRollerCoaster();
-
+  
   return (
     <>
       <Sky />
       <BuildCamera />
       <RideCamera />
-
+      
       <Suspense fallback={null}>
         <Ground />
         <TrackBuilder />
@@ -109,12 +118,20 @@ function Scene() {
 
 function App() {
   return (
-    <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
+    <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
       <MusicController />
       <Canvas
         shadows
-        camera={{ position: [20, 15, 20], fov: 60, near: 0.1, far: 1000 }}
-        gl={{ antialias: true, powerPreference: "default" }}
+        camera={{
+          position: [20, 15, 20],
+          fov: 60,
+          near: 0.1,
+          far: 1000
+        }}
+        gl={{
+          antialias: true,
+          powerPreference: "default"
+        }}
       >
         <Scene />
       </Canvas>
