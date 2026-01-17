@@ -9,58 +9,82 @@ export function TrackBuilder() {
   const { trackPoints, addTrackPoint, mode, selectPoint, isAddingPoints } = useRollerCoaster();
   const planeRef = useRef<THREE.Mesh>(null);
   const { gl } = useThree();
-  
+
   const [isDraggingNew, setIsDraggingNew] = useState(false);
   const [dragPosition, setDragPosition] = useState<THREE.Vector3 | null>(null);
   const currentHeightRef = useRef(3);
-  
+
+  // -------- Preload track from A.json --------
+  useEffect(() => {
+    const loadPrebuiltTrack = async () => {
+      try {
+        const response = await fetch('/A.json'); // must be in public folder
+        const data = await response.json();
+
+        if (!data.trackPoints) return;
+
+        data.trackPoints.forEach((point: any) => {
+          const position = new THREE.Vector3(...point.position);
+          addTrackPoint({ ...point, position });
+        });
+
+        console.log('Preloaded coaster track from A.json');
+      } catch (err) {
+        console.error('Failed to load prebuilt track:', err);
+      }
+    };
+
+    loadPrebuiltTrack();
+  }, [addTrackPoint]);
+
+  // -------- Drag/Build functionality --------
   useEffect(() => {
     if (!isDraggingNew) return;
-    
+
     const handlePointerMove = (e: PointerEvent) => {
       if (!isDraggingNew || !dragPosition) return;
-      
+
       const deltaY = e.movementY * -0.1;
       const newHeight = Math.max(0.5, Math.min(50, currentHeightRef.current + deltaY));
       currentHeightRef.current = newHeight;
-      
+
       setDragPosition(new THREE.Vector3(dragPosition.x, newHeight, dragPosition.z));
     };
-    
+
     const handlePointerUp = () => {
       if (isDraggingNew && dragPosition) {
         const finalPoint = new THREE.Vector3(dragPosition.x, currentHeightRef.current, dragPosition.z);
         addTrackPoint(finalPoint);
         console.log("Added track point at:", finalPoint);
       }
-      
+
       setIsDraggingNew(false);
       setDragPosition(null);
       currentHeightRef.current = 3;
     };
-    
+
     gl.domElement.addEventListener("pointermove", handlePointerMove);
     gl.domElement.addEventListener("pointerup", handlePointerUp);
-    
+
     return () => {
       gl.domElement.removeEventListener("pointermove", handlePointerMove);
       gl.domElement.removeEventListener("pointerup", handlePointerUp);
     };
   }, [isDraggingNew, dragPosition, addTrackPoint, gl.domElement]);
-  
+
   const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (mode !== "build" || !isAddingPoints) return;
     e.stopPropagation();
-    
+
     selectPoint(null);
-    
+
     currentHeightRef.current = 3;
     const point = new THREE.Vector3(e.point.x, 3, e.point.z);
-    
+
     setDragPosition(point);
     setIsDraggingNew(true);
   };
-  
+
   return (
     <group>
       <mesh
@@ -73,9 +97,9 @@ export function TrackBuilder() {
         <planeGeometry args={[800, 800]} />
         <meshBasicMaterial transparent opacity={0} />
       </mesh>
-      
+
       <Track />
-      
+
       {trackPoints.map((point, index) => (
         <TrackPoint
           key={point.id}
@@ -87,7 +111,7 @@ export function TrackBuilder() {
           isLast={index === trackPoints.length - 1}
         />
       ))}
-      
+
       {isDraggingNew && dragPosition && (
         <group>
           <mesh position={[dragPosition.x, dragPosition.y, dragPosition.z]}>
