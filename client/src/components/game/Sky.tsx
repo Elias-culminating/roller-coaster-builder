@@ -1,12 +1,22 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
 import { useRollerCoaster } from "@/lib/stores/useRollerCoaster";
 
 export function Sky() {
   const { isNightMode } = useRollerCoaster();
-  
+  const sunRef = useRef<any>(null);
+  const timeRef = useRef(0);
+
+  useFrame((_, delta) => {
+    if (!isNightMode && sunRef.current) {
+      timeRef.current += delta * 0.05;
+      sunRef.current.position.x = Math.sin(timeRef.current) * 80;
+      sunRef.current.position.y = 45 + Math.cos(timeRef.current) * 10;
+    }
+  });
+
   const parkLights = useMemo(() => {
     const lights: { x: number; z: number; height: number; color: string }[] = [];
-    
     for (let i = 0; i < 30; i++) {
       const angle = (i / 30) * Math.PI * 2;
       const radius = 60 + (i * 7) % 100;
@@ -19,7 +29,7 @@ export function Sky() {
     }
     return lights;
   }, []);
-  
+
   const stars = useMemo(() => {
     const s: { x: number; y: number; z: number; size: number }[] = [];
     for (let i = 0; i < 100; i++) {
@@ -32,7 +42,7 @@ export function Sky() {
     }
     return s;
   }, []);
-  
+
   const ferrisWheel = useMemo(() => {
     const spokes: { angle: number; color: string }[] = [];
     for (let i = 0; i < 12; i++) {
@@ -43,34 +53,34 @@ export function Sky() {
     }
     return spokes;
   }, []);
-  
+
   if (isNightMode) {
     return (
       <>
         <color attach="background" args={["#101025"]} />
         <fog attach="fog" args={["#101025", 150, 500]} />
-        
+
         <ambientLight intensity={0.4} color="#6688cc" />
         <directionalLight position={[50, 50, 25]} intensity={0.5} color="#8899bb" />
-        
+
         <pointLight position={[0, 30, 0]} intensity={2} color="#FFFFFF" distance={150} />
         <pointLight position={[100, 40, -80]} intensity={1.5} color="#FF88FF" distance={100} />
         <pointLight position={[-80, 35, 60]} intensity={1.5} color="#FFAA44" distance={100} />
-        
+
         <mesh position={[-60, 45, -80]}>
           <sphereGeometry args={[6, 32, 32]} />
           <meshBasicMaterial color="#FFFFEE" />
         </mesh>
-        
+
         {stars.map((star, i) => (
           <mesh key={i} position={[star.x, star.y, star.z]}>
             <sphereGeometry args={[star.size, 6, 6]} />
             <meshBasicMaterial color="#FFFFFF" />
           </mesh>
         ))}
-        
+
         {parkLights.map((light, i) => (
-          <group key={`post-${i}`} position={[light.x, 0, light.z]}>
+          <group key={i} position={[light.x, 0, light.z]}>
             <mesh position={[0, light.height / 2, 0]}>
               <cylinderGeometry args={[0.15, 0.2, light.height, 6]} />
               <meshStandardMaterial color="#444444" />
@@ -81,7 +91,7 @@ export function Sky() {
             </mesh>
           </group>
         ))}
-        
+
         <group position={[120, 0, -100]}>
           <mesh position={[0, 22, 0]}>
             <cylinderGeometry args={[1, 1.5, 44, 8]} />
@@ -98,117 +108,23 @@ export function Sky() {
             </mesh>
           ))}
         </group>
-        
-        <group position={[-100, 0, 80]}>
-          <mesh position={[0, 35, 0]}>
-            <cylinderGeometry args={[4, 6, 70, 10]} />
-            <meshStandardMaterial color="#444466" />
-          </mesh>
-          {[0, 1, 2, 3, 4].map((i) => (
-            <mesh key={i} position={[0, 10 + i * 12, 0]}>
-              <torusGeometry args={[8, 0.4, 6, 24]} />
-              <meshBasicMaterial color={["#FF0000", "#FFFF00", "#00FF00", "#00FFFF", "#FF00FF"][i]} />
-            </mesh>
-          ))}
-        </group>
-        
-        <group position={[80, 0, 100]}>
-          <mesh position={[0, 4, 0]}>
-            <cylinderGeometry args={[12, 14, 8, 16]} />
-            <meshStandardMaterial color="#774499" />
-          </mesh>
-          {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
-            const angle = (i / 8) * Math.PI * 2;
-            return (
-              <mesh key={i} position={[Math.cos(angle) * 10, 5, Math.sin(angle) * 10]}>
-                <boxGeometry args={[2, 3, 1.5]} />
-                <meshBasicMaterial color={["#FF0000", "#00FF00", "#0000FF", "#FFFF00"][i % 4]} />
-              </mesh>
-            );
-          })}
-        </group>
-        
-        <group position={[-80, 0, -120]}>
-          <mesh position={[0, 25, 0]}>
-            <cylinderGeometry args={[2, 3, 50, 8]} />
-            <meshStandardMaterial color="#553333" />
-          </mesh>
-          {[0, 1, 2, 3].map((i) => (
-            <group key={i}>
-              <mesh position={[8, 12 + i * 10, 0]}>
-                <boxGeometry args={[14, 0.6, 2]} />
-                <meshBasicMaterial color={i % 2 === 0 ? "#FF6600" : "#FFFF00"} />
-              </mesh>
-              <mesh position={[-8, 12 + i * 10, 0]}>
-                <boxGeometry args={[14, 0.6, 2]} />
-                <meshBasicMaterial color={i % 2 === 0 ? "#FFFF00" : "#FF6600"} />
-              </mesh>
-            </group>
-          ))}
-        </group>
-        
-        <group position={[150, 0, 50]}>
-          <mesh position={[0, 20, 0]}>
-            <cylinderGeometry args={[1.5, 2, 40, 8]} />
-            <meshStandardMaterial color="#336633" />
-          </mesh>
-          {[0, 1, 2, 3, 4, 5].map((i) => {
-            const angle = (i / 6) * Math.PI * 2;
-            return (
-              <group key={i}>
-                <mesh position={[Math.cos(angle) * 6, 35, Math.sin(angle) * 6]} rotation={[0, angle, 0]}>
-                  <boxGeometry args={[12, 0.5, 1]} />
-                  <meshBasicMaterial color="#00FF00" />
-                </mesh>
-                <mesh position={[Math.cos(angle) * 12, 33, Math.sin(angle) * 12]}>
-                  <boxGeometry args={[2, 4, 2]} />
-                  <meshBasicMaterial color={["#FF0000", "#FFFF00", "#00FFFF"][i % 3]} />
-                </mesh>
-              </group>
-            );
-          })}
-        </group>
-        
-        <group position={[-150, 0, -50]}>
-          {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => {
-            const x = (i % 4) * 10 - 15;
-            const z = Math.floor(i / 4) * 10 - 10;
-            return (
-              <mesh key={i} position={[x, 3, z]}>
-                <boxGeometry args={[4, 6, 4]} />
-                <meshBasicMaterial color={["#FF0000", "#FFFF00", "#00FF00", "#0000FF", "#FF00FF"][i % 5]} />
-              </mesh>
-            );
-          })}
-        </group>
       </>
     );
   }
-  
+
   return (
     <>
-      <color attach="background" args={["#87CEEB"]} />
-      <fog attach="fog" args={["#87CEEB", 100, 400]} />
-      
-      <mesh position={[50, 40, -50]}>
-        <sphereGeometry args={[8, 32, 32]} />
-        <meshBasicMaterial color="#FFFF88" />
+      <color attach="background" args={["#BFDFFF"]} />
+      <fog attach="fog" args={["#BFDFFF", 120, 450]} />
+
+      <mesh ref={sunRef} position={[80, 45, -80]}>
+        <sphereGeometry args={[10, 32, 32]} />
+        <meshBasicMaterial color="#FFF2AA" />
       </mesh>
-      
-      <ambientLight intensity={0.4} />
-      <directionalLight
-        position={[50, 50, 25]}
-        intensity={1}
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-camera-far={200}
-        shadow-camera-left={-100}
-        shadow-camera-right={100}
-        shadow-camera-top={100}
-        shadow-camera-bottom={-100}
-      />
-      <hemisphereLight args={["#87CEEB", "#228B22", 0.3]} />
+
+      <ambientLight intensity={0.5} />
+      <directionalLight position={[60, 60, 30]} intensity={1.1} castShadow />
+      <hemisphereLight args={["#CFE9FF", "#3A7D44", 0.35]} />
     </>
   );
 }
