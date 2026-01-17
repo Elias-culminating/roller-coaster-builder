@@ -1,36 +1,10 @@
-import { useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useMemo } from "react";
 import { useRollerCoaster } from "@/lib/stores/useRollerCoaster";
 
 export function Sky() {
   const { isNightMode } = useRollerCoaster();
 
-  // ---------- AI ENHANCEMENTS ----------
-  const sunRef = useRef<any>(null);
-  const sunTime = useRef(0);
-  const cloudRefs = useRef<any[]>([]);
-
-  useFrame((_, delta) => {
-    if (!isNightMode) {
-      sunTime.current += delta * 0.1;
-
-      // Sun moves in a smooth arc
-      if (sunRef.current) {
-        sunRef.current.position.x = Math.sin(sunTime.current) * 80;
-        sunRef.current.position.y = 40 + Math.cos(sunTime.current) * 20;
-      }
-
-      // Clouds drift
-      cloudRefs.current.forEach((cloud) => {
-        if (cloud) {
-          cloud.position.x += delta * 2;
-          if (cloud.position.x > 120) cloud.position.x = -120;
-        }
-      });
-    }
-  });
-
-  // ---------- ORIGINAL TEACHER DATA ----------
+  // Park lights
   const parkLights = useMemo(() => {
     const lights: { x: number; z: number; height: number; color: string }[] = [];
     for (let i = 0; i < 30; i++) {
@@ -40,37 +14,53 @@ export function Sky() {
         x: Math.cos(angle) * radius,
         z: Math.sin(angle) * radius,
         height: 8 + (i % 4),
-        color: ["#FFD700", "#FF6B6B", "#4ECDC4", "#FF69B4", "#00CED1", "#FFFFFF"][i % 6]
+        color: ["#FFD700", "#FF6B6B", "#4ECDC4", "#FF69B4", "#00CED1", "#FFFFFF"][i % 6],
       });
     }
     return lights;
   }, []);
 
+  // Night stars
   const stars = useMemo(() => {
     const s: { x: number; y: number; z: number; size: number }[] = [];
     for (let i = 0; i < 100; i++) {
       s.push({
-        x: (i * 17 % 500) - 250,
-        y: 60 + (i * 13 % 50),
-        z: (i * 23 % 500) - 250,
-        size: 0.15 + (i % 3) * 0.05
+        x: (i * 17) % 500 - 250,
+        y: 60 + (i * 13) % 50,
+        z: (i * 23) % 500 - 250,
+        size: 0.15 + (i % 3) * 0.05,
       });
     }
     return s;
   }, []);
 
+  // Ferris wheel spokes
   const ferrisWheel = useMemo(() => {
     const spokes: { angle: number; color: string }[] = [];
     for (let i = 0; i < 12; i++) {
       spokes.push({
         angle: (i / 12) * Math.PI * 2,
-        color: ["#FF0000", "#FFFF00", "#00FF00", "#0000FF", "#FF00FF", "#00FFFF"][i % 6]
+        color: ["#FF0000", "#FFFF00", "#00FF00", "#0000FF", "#FF00FF", "#00FFFF"][i % 6],
       });
     }
     return spokes;
   }, []);
 
-  // ---------- NIGHT MODE ----------
+  // AI addition: daytime snow
+  const snowflakes = useMemo(() => {
+    if (isNightMode) return [];
+    const s: { x: number; y: number; z: number; size: number }[] = [];
+    for (let i = 0; i < 50; i++) {
+      s.push({
+        x: (Math.random() - 0.5) * 200,
+        y: Math.random() * 60 + 20,
+        z: (Math.random() - 0.5) * 200,
+        size: 0.3 + Math.random() * 0.2,
+      });
+    }
+    return s;
+  }, [isNightMode]);
+
   if (isNightMode) {
     return (
       <>
@@ -125,48 +115,45 @@ export function Sky() {
             </mesh>
           ))}
         </group>
+
+        {/* …other night elements copied exactly from teacher OG… */}
       </>
     );
   }
 
-  // ---------- DAY MODE ----------
+  // Day scene with snow
   return (
     <>
-      <color attach="background" args={["#BFDFFF"]} />
-      <fog attach="fog" args={["#BFDFFF", 120, 450]} />
+      <color attach="background" args={["#87CEEB"]} />
+      <fog attach="fog" args={["#87CEEB", 100, 400]} />
 
-      {/* Animated Sun */}
-      <mesh ref={sunRef} position={[0, 40, -50]}>
-        <sphereGeometry args={[10, 32, 32]} />
-        <meshBasicMaterial color="#FFF2AA" />
+      <mesh position={[50, 40, -50]}>
+        <sphereGeometry args={[8, 32, 32]} />
+        <meshBasicMaterial color="#FFFF88" />
       </mesh>
 
-      {/* Drifting Clouds */}
-      {[0, 1, 2, 3, 4].map((i) => (
-        <group
-          key={i}
-          ref={(el) => (cloudRefs.current[i] = el)}
-          position={[-100 + i * 40, 50 + (i % 2) * 5, -50 + i * 20]}
-        >
-          <mesh>
-            <sphereGeometry args={[6, 16, 16]} />
-            <meshStandardMaterial color="#FFFFFF" />
-          </mesh>
-          <mesh position={[6, 0, 0]}>
-            <sphereGeometry args={[5, 16, 16]} />
-            <meshStandardMaterial color="#FFFFFF" />
-          </mesh>
-          <mesh position={[-6, 0, 0]}>
-            <sphereGeometry args={[5, 16, 16]} />
-            <meshStandardMaterial color="#FFFFFF" />
-          </mesh>
-        </group>
-      ))}
+      <ambientLight intensity={0.4} />
+      <directionalLight
+        position={[50, 50, 25]}
+        intensity={1}
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-far={200}
+        shadow-camera-left={-100}
+        shadow-camera-right={100}
+        shadow-camera-top={100}
+        shadow-camera-bottom={-100}
+      />
+      <hemisphereLight args={["#87CEEB", "#228B22", 0.3]} />
 
-      {/* AI-Enhanced daytime ambient */}
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[60, 60, 30]} intensity={1.1} />
-      <hemisphereLight args={["#CFE9FF", "#3A7D44", 0.35]} />
+      {/* Snowflakes */}
+      {snowflakes.map((flake, i) => (
+        <mesh key={i} position={[flake.x, flake.y, flake.z]}>
+          <sphereGeometry args={[flake.size, 6, 6]} />
+          <meshStandardMaterial color="#FFFFFF" />
+        </mesh>
+      ))}
     </>
   );
 }
