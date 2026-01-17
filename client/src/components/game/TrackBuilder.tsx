@@ -14,11 +14,12 @@ export function TrackBuilder() {
   const [dragPosition, setDragPosition] = useState<THREE.Vector3 | null>(null);
   const currentHeightRef = useRef(3);
 
-  // -------- Preload track from A.json --------
+  // ---------------- Preload A.json track ----------------
   useEffect(() => {
-    const loadPrebuiltTrack = async () => {
+    const loadTrack = async () => {
       try {
-        const response = await fetch('/A.json'); // must be in public folder
+        // Make sure A.json is in your public folder
+        const response = await fetch("/A.json");
         const data = await response.json();
 
         if (!data.trackPoints) return;
@@ -28,16 +29,16 @@ export function TrackBuilder() {
           addTrackPoint({ ...point, position });
         });
 
-        console.log('Preloaded coaster track from A.json');
+        console.log("Preloaded track from A.json");
       } catch (err) {
-        console.error('Failed to load prebuilt track:', err);
+        console.error("Failed to preload track:", err);
       }
     };
 
-    loadPrebuiltTrack();
+    loadTrack();
   }, [addTrackPoint]);
 
-  // -------- Drag/Build functionality --------
+  // ---------------- Drag/Build functionality ----------------
   useEffect(() => {
     if (!isDraggingNew) return;
 
@@ -85,6 +86,7 @@ export function TrackBuilder() {
     setIsDraggingNew(true);
   };
 
+  // ---------------- Render ----------------
   return (
     <group>
       <mesh
