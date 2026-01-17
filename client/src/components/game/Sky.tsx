@@ -46,16 +46,16 @@ export function Sky() {
     return spokes;
   }, []);
 
-  // AI addition: daytime snow
+  // Daytime snowflakes
   const snowflakes = useMemo(() => {
     if (isNightMode) return [];
     const s: { x: number; y: number; z: number; size: number }[] = [];
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 30; i++) {
       s.push({
-        x: (Math.random() - 0.5) * 200,
-        y: Math.random() * 60 + 20,
-        z: (Math.random() - 0.5) * 200,
-        size: 0.3 + Math.random() * 0.2,
+        x: (Math.random() - 0.5) * 100,   // closer to scene center
+        y: Math.random() * 30 + 10,        // 10–40 above ground
+        z: (Math.random() - 0.5) * 100,
+        size: 0.2 + Math.random() * 0.2,   // smaller snowflakes
       });
     }
     return s;
@@ -115,13 +115,11 @@ export function Sky() {
             </mesh>
           ))}
         </group>
-
-        {/* …other night elements copied exactly from teacher OG… */}
       </>
     );
   }
 
-  // Day scene with snow
+  // Day scene with safe snow
   return (
     <>
       <color attach="background" args={["#87CEEB"]} />
@@ -151,7 +149,7 @@ export function Sky() {
       {snowflakes.map((flake, i) => (
         <mesh key={i} position={[flake.x, flake.y, flake.z]}>
           <sphereGeometry args={[flake.size, 6, 6]} />
-          <meshStandardMaterial color="#FFFFFF" />
+          <meshBasicMaterial color="#FFFFFF" />
         </mesh>
       ))}
     </>
