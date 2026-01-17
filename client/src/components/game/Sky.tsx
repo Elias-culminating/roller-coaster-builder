@@ -5,22 +5,21 @@ import { useRollerCoaster } from "@/lib/stores/useRollerCoaster";
 export function Sky() {
   const { isNightMode } = useRollerCoaster();
 
-  // 🌞 Daytime animation refs
+  // Refs for day animation
   const sunRef = useRef<any>(null);
   const sunTime = useRef(0);
   const cloudRefs = useRef<any[]>([]);
 
+  // Animate sun and clouds only during day
   useFrame((_, delta) => {
     if (!isNightMode) {
       sunTime.current += delta * 0.1;
 
-      // Move the sun in a slow arc
       if (sunRef.current) {
         sunRef.current.position.x = Math.sin(sunTime.current) * 80;
         sunRef.current.position.y = 40 + Math.cos(sunTime.current) * 20;
       }
 
-      // Drift clouds across the sky
       cloudRefs.current.forEach((cloud) => {
         if (cloud) {
           cloud.position.x += delta * 2;
@@ -41,7 +40,7 @@ export function Sky() {
         x: Math.cos(angle) * radius,
         z: Math.sin(angle) * radius,
         height: 8 + (i % 4),
-        color: ["#FFD700", "#FF6B6B", "#4ECDC4", "#FF69B4", "#00CED1", "#FFFFFF"][i % 6]
+        color: ["#FFD700", "#FF6B6B", "#4ECDC4", "#FF69B4", "#00CED1", "#FFFFFF"][i % 6],
       });
     }
     return lights;
@@ -51,10 +50,10 @@ export function Sky() {
     const s: { x: number; y: number; z: number; size: number }[] = [];
     for (let i = 0; i < 100; i++) {
       s.push({
-        x: (i * 17 % 500) - 250,
-        y: 60 + (i * 13 % 50),
-        z: (i * 23 % 500) - 250,
-        size: 0.15 + (i % 3) * 0.05
+        x: (i * 17) % 500 - 250,
+        y: 60 + (i * 13) % 50,
+        z: (i * 23) % 500 - 250,
+        size: 0.15 + (i % 3) * 0.05,
       });
     }
     return s;
@@ -65,13 +64,13 @@ export function Sky() {
     for (let i = 0; i < 12; i++) {
       spokes.push({
         angle: (i / 12) * Math.PI * 2,
-        color: ["#FF0000", "#FFFF00", "#00FF00", "#0000FF", "#FF00FF", "#00FFFF"][i % 6]
+        color: ["#FF0000", "#FFFF00", "#00FF00", "#0000FF", "#FF00FF", "#00FFFF"][i % 6],
       });
     }
     return spokes;
   }, []);
 
-  // 🌙 NIGHT MODE — FULLY ORIGINAL
+  // ---------- NIGHT MODE ----------
   if (isNightMode) {
     return (
       <>
@@ -120,28 +119,31 @@ export function Sky() {
             <meshBasicMaterial color="#FF00FF" />
           </mesh>
           {ferrisWheel.map((spoke, i) => (
-            <mesh key={i} position={[Math.cos(spoke.angle) * 18, 28 + Math.sin(spoke.angle) * 18, 0]}>
+            <mesh
+              key={i}
+              position={[Math.cos(spoke.angle) * 18, 28 + Math.sin(spoke.angle) * 18, 0]}
+            >
               <boxGeometry args={[3, 3, 3]} />
               <meshBasicMaterial color={spoke.color} />
             </mesh>
           ))}
         </group>
 
-        {/* Rest of night decor stays exactly the same */}
+        {/* Keep all other night decorations as in original code */}
       </>
     );
   }
 
-  // 🌤 DAY MODE — ENHANCED
+  // ---------- DAY MODE ----------
   return (
     <>
-      <color attach="background" args={["#BFDFFF"]} />
-      <fog attach="fog" args={["#BFDFFF", 120, 450]} />
+      <color attach="background" args={["#87CEEB"]} />
+      <fog attach="fog" args={["#87CEEB", 100, 400]} />
 
       {/* Animated Sun */}
-      <mesh ref={sunRef}>
-        <sphereGeometry args={[10, 32, 32]} />
-        <meshBasicMaterial color="#FFF2AA" />
+      <mesh ref={sunRef} position={[50, 40, -50]}>
+        <sphereGeometry args={[8, 32, 32]} />
+        <meshBasicMaterial color="#FFFF88" />
       </mesh>
 
       {/* Drifting Clouds */}
@@ -166,9 +168,20 @@ export function Sky() {
         </group>
       ))}
 
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[60, 60, 30]} intensity={1.1} />
-      <hemisphereLight args={["#CFE9FF", "#3A7D44", 0.35]} />
+      <ambientLight intensity={0.4} />
+      <directionalLight
+        position={[50, 50, 25]}
+        intensity={1}
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-far={200}
+        shadow-camera-left={-100}
+        shadow-camera-right={100}
+        shadow-camera-top={100}
+        shadow-camera-bottom={-100}
+      />
+      <hemisphereLight args={["#87CEEB", "#228B22", 0.3]} />
     </>
   );
 }
