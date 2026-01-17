@@ -10,8 +10,7 @@ import { GameUI } from "./components/game/GameUI";
 import { useRollerCoaster } from "./lib/stores/useRollerCoaster";
 import { useAudio } from "./lib/stores/useAudio";
 
-// Import your coaster JSON
-import coasterData from "./public/A.json";
+
 
 function MusicController() {
   const { isNightMode } = useRollerCoaster();
